@@ -8,7 +8,7 @@ using System.ServiceModel;
 
 namespace MyPlugins
 {
-    public class HelloWorld : IPlugin
+    public class TaskCreate : IPlugin
     {
         public void Execute(IServiceProvider serviceProvider)
         {
@@ -35,25 +35,28 @@ namespace MyPlugins
                 context.InputParameters["Target"] is Entity)
             {
                 // Obtain the target entity from the input parameters.  
-                Entity entity = (Entity)context.InputParameters["Target"];
+                Entity contact = (Entity)context.InputParameters["Target"];
 
                 try
                 {
                     // Plug-in business logic goes here.
-                    string firstName = string.Empty;
 
-                    // Read form attribute values
-                    if(entity.Attributes.Contains("firstname"))
-                    {
-                       firstName = entity.Attributes["firstname"].ToString();
-                    }
+                    Entity taskRecord = new Entity("task");
+
+                    //Single line of text
+                    taskRecord.Attributes.Add("subject", "Follow up");
+                    taskRecord.Attributes.Add("description", "Please follow up with contact.");
+
+                    //Date
+                    taskRecord.Attributes.Add("scheduledend", DateTime.Now.AddDays(2));
                     
-                    string lastName = entity.Attributes["lastname"].ToString();
+                    // Option set value as "High" 
+                    taskRecord.Attributes.Add("prioritycode", new OptionSetValue(2));
 
-                    //Assign data to attributes
+                    //Parent Record or Look up
+                    taskRecord.Attributes.Add("regardingobjectid", contact.ToEntityReference());
 
-                    entity.Attributes.Add("description", "Hello World! " + firstName + " " + lastName);
-
+                    Guid taskGuid = service.Create(taskRecord);
 
                 }
 
@@ -71,3 +74,4 @@ namespace MyPlugins
         }
     }
 }
+

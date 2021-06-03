@@ -5,10 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Xrm.Sdk;
 using System.ServiceModel;
+using Microsoft.Xrm.Sdk.Query;
 
 namespace MyPlugins
 {
-    public class HelloWorld : IPlugin
+    public class DuplicateCheck : IPlugin
     {
         public void Execute(IServiceProvider serviceProvider)
         {
@@ -35,24 +36,31 @@ namespace MyPlugins
                 context.InputParameters["Target"] is Entity)
             {
                 // Obtain the target entity from the input parameters.  
-                Entity entity = (Entity)context.InputParameters["Target"];
+                Entity contact = (Entity)context.InputParameters["Target"];
 
                 try
                 {
                     // Plug-in business logic goes here.
-                    string firstName = string.Empty;
+                    string email = string.Empty;
 
-                    // Read form attribute values
-                    if(entity.Attributes.Contains("firstname"))
+                    if(contact.Attributes.Contains("emailaddress1"))
                     {
-                       firstName = entity.Attributes["firstname"].ToString();
+                        email = contact.Attributes["emailaddress1"].ToString();
+
+                        // SELECT * FROM contact where emailaddress1 == 'email'
+
+                        QueryExpression query = new QueryExpression("contact");
+                        query.ColumnSet = new ColumnSet(new string[] { "emailaddress1" });
+                        query.Criteria.AddCondition("emailaddress1", ConditionOperator.Equal, email);
+
+                        EntityCollection collection = service.RetrieveMultiple(query);
+
+                        if (collection.Entities.Count > 0)
+                        {
+                            throw new InvalidPluginExecutionException("Contact with email already exists");
+                        }
+
                     }
-                    
-                    string lastName = entity.Attributes["lastname"].ToString();
-
-                    //Assign data to attributes
-
-                    entity.Attributes.Add("description", "Hello World! " + firstName + " " + lastName);
 
 
                 }
